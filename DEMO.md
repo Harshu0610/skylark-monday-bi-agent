@@ -120,7 +120,9 @@ One structured tool call. A framework would add ~20 transitive dependencies and 
 
 ## If asked what you'd do next
 
-An eval suite over a golden question set in CI; a DuckDB semantic layer so adding a metric stops meaning adding Python; and asking Skylark for a customer-code mapping table, which would unlock the entire customer-level cross-board dimension that's currently impossible.
+A DuckDB semantic layer, so adding a metric stops meaning adding Python; webhook-driven incremental sync instead of TTL polling; and asking Skylark for a customer-code mapping table, which would unlock the entire customer-level cross-board dimension that's currently impossible.
+
+*(The golden-question eval suite was on this list and is now built — 92 tests pinning metric values for 16 founder questions, running in CI. Worth mentioning: it found two real defects in the ledger's own accounting within minutes of existing, which is the argument for having it.)*
 
 ---
 
