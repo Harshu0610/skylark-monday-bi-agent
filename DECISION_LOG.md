@@ -98,8 +98,10 @@ The **enum-constrained plan schema is the anti-hallucination mechanism** — the
 
 ## 10. What I'd do with more time
 
-1. **An eval suite over a golden question set** — assert plan shape and metric values across ~30 questions, run in CI. The highest-value next thing by a distance.
-2. **DuckDB semantic layer** — a metric definition compiles to SQL, so adding metrics stops meaning adding Python.
+*(The golden-question eval suite was on this list and has since been built — 92 tests pinning metric values for 16 founder questions, running in CI. It immediately found two real defects in the ledger's own accounting, which is the argument for it.)*
+
+
+1. **DuckDB semantic layer** — a metric definition compiles to SQL, so adding metrics stops meaning adding Python.
 3. **Ask Skylark for a customer-code mapping table** — it would unlock the entire customer-level cross-board dimension that is currently impossible.
 4. Webhook-driven incremental sync instead of TTL polling.
 5. Scheduled leadership briefing delivered to Slack.

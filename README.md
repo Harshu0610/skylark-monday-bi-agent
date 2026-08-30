@@ -62,6 +62,8 @@ The two purple boxes are the only non-deterministic components. Everything else 
 
 **Cross-board** — sector opportunity vs execution matrix, accounts with both open pipeline and delivery risk, deals won vs work delivered, owner sales vs delivery
 
+**Movement** — quarter-over-quarter new pipeline, with automatic fallback to the most recent quarters that contain records
+
 **Executive** — CEO summary, **leadership briefing** (snapshot, quarter-on-quarter movement, ranked risks with figures attached, and copy-paste-ready talking points), data-quality report
 
 **Reliability** — per-query confidence scoring, query-plan transparency, stated assumptions, keyword-routing fallback if the LLM is down, template narration if it fails mid-answer, stale-cache serving if Monday is unreachable
@@ -75,7 +77,7 @@ The two purple boxes are the only non-deterministic components. Everything else 
 | Agent | Hand-rolled, no framework | One structured call — a framework would be pure overhead |
 | Monday | GraphQL API v2, direct | Full control over pagination, retry and read-only enforcement |
 | Frontend | Vanilla JS + CSS, served by FastAPI | One deployment, no CORS, no build step |
-| Tests | pytest — **193 tests** | Concentrated on normalization and metrics, where bugs live |
+| Tests | pytest — **290 tests**, incl. a golden-question eval suite | Concentrated on normalization and metrics, where bugs live |
 
 ---
 
@@ -162,13 +164,18 @@ docker compose up --build
 ## Testing
 
 ```bash
-cd backend && python -m pytest -q        # 193 tests
+cd backend && python -m pytest -q               # 290 tests
+cd backend && python -m pytest -m eval -q       # golden-question suite only
+cd backend && python -m pytest -m "not eval" -q # everything else
 ```
 
 Coverage concentrates where correctness actually lives:
 - **Normalizers (85)** — every date format, currency format, status/sector/stage alias, and the guarantee that a missing amount is `None` and never `0`
 - **Metrics (22)** — known-answer fixtures; win rate with zero closed deals returns `None`, not a `ZeroDivisionError`; the account join doesn't multiply rows
-- **Agent (64)** — intent routing, plan validation against unknown values, the number-verification guard, prompt-injection fencing, and an assertion that **no GraphQL mutation exists anywhere in the codebase**
+- **Agent (69)** — intent routing, plan validation against unknown values, the number-verification guard, prompt-injection fencing, and an assertion that **no GraphQL mutation exists anywhere in the codebase**
+- **Golden-question eval (92)** — runs the real pipeline over the actual spreadsheets and pins metric values for 16 founder questions. It asserts *intent and arithmetic*, never prose. Two invariants apply to every question: any metric excluding rows must say why, and no rupee metric may report `0` with no contributing rows
+
+Both suites run in CI on every push.
 
 See **[DEMO.md](DEMO.md)** for a full walkthrough script.
 
