@@ -170,6 +170,8 @@ Coverage concentrates where correctness actually lives:
 - **Metrics (22)** — known-answer fixtures; win rate with zero closed deals returns `None`, not a `ZeroDivisionError`; the account join doesn't multiply rows
 - **Agent (64)** — intent routing, plan validation against unknown values, the number-verification guard, prompt-injection fencing, and an assertion that **no GraphQL mutation exists anywhere in the codebase**
 
+See **[DEMO.md](DEMO.md)** for a full walkthrough script.
+
 ## Example queries
 
 1. *What's our total pipeline?* — the ledger appears in the first answer
