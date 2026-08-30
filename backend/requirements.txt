@@ -1,13 +1,26 @@
+# Deliberately small. Every line here is actually imported by the application
+# or its tests -- there are no vendor SDKs for the LLM providers because the
+# HTTP clients are hand-written against three simple JSON endpoints, and a
+# wrapper would add a large transitive tree to save about thirty lines.
+
+# API
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
 pydantic-settings==2.7.0
+
+# HTTP -- used for both Monday.com GraphQL and every LLM provider
 httpx==0.28.1
+
+# Analytics
 pandas==2.2.3
 python-dateutil==2.9.0.post0
-tenacity==9.0.0
-anthropic==0.42.0
-groq==0.15.0
-python-multipart==0.0.20
+
+# Reading the source .xlsx files (scripts/prepare_for_monday.py and the
+# golden-question eval suite, which asserts header-echo detection against the
+# original spreadsheet rather than the cleaned CSV).
+openpyxl==3.1.5
+
+# Tests
 pytest==8.3.4
 pytest-asyncio==0.25.0
