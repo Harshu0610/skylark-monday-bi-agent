@@ -36,7 +36,11 @@ class Settings(BaseSettings):
     llm_provider: Literal["groq", "anthropic", "ollama"] = "groq"
 
     groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-120b"
+    # Retried automatically when the primary model is rate limited. Smaller
+    # models carry a far higher free-tier token budget, so a demo asking rapid
+    # questions degrades to a slightly plainer answer instead of no answer.
+    groq_fallback_model: str = "openai/gpt-oss-20b"
 
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-20250514"

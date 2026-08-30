@@ -222,3 +222,82 @@ def test_nonexistent_sector_returns_a_helpful_message(deals, work_orders, report
                      filters=Filters(sector="Energy"))
     result = run_analysis(plan, deals, work_orders, reports)
     assert any("Sectors present" in c for c in result.caveats)
+
+
+# ---------------------------------------------------------------------------
+# Metrics that define their own status scope
+# ---------------------------------------------------------------------------
+
+def test_win_rate_is_not_computed_on_a_status_filtered_frame(deals, work_orders, reports):
+    """Regression: a plan filtering to status=Won made win rate 100%.
+
+    Arithmetically true, completely useless. Win rate and lost value must see
+    every closed deal regardless of what the plan filtered to.
+    """
+    from app.models.schemas import Filters
+    plan = QueryPlan(intent=Intent.WON_REVENUE, boards=[Board.DEALS],
+                     filters=Filters(status=["Won"]))
+    result = run_analysis(plan, deals, work_orders, reports)
+
+    win = next(m for m in result.metrics if m.key == "win_rate")
+    assert win.value == pytest.approx(2 / 3 * 100)
+    assert win.value != 100.0
+
+    lost = next(m for m in result.metrics if m.key == "lost_value")
+    assert lost.value is not None
+
+
+def test_won_revenue_still_respects_the_status_filter(deals, work_orders, reports):
+    """The filter must still apply to the metric it was meant for."""
+    from app.models.schemas import Filters
+    plan = QueryPlan(intent=Intent.WON_REVENUE, boards=[Board.DEALS],
+                     filters=Filters(status=["Won"]))
+    result = run_analysis(plan, deals, work_orders, reports)
+    won = next(m for m in result.metrics if m.key == "won_revenue")
+    assert won.value == pytest.approx(2_000_000)
+
+
+def test_deal_status_filter_does_not_empty_the_work_order_board(
+    deals, work_orders, reports
+):
+    """Regression: a plan filtering status=['Open'] applied that filter to work
+    orders too, whose vocabulary is Completed/Ongoing/NotStarted. Nothing
+    matched, and cross-board account coverage silently collapsed to 0%."""
+    from app.models.schemas import Filters
+    plan = QueryPlan(intent=Intent.CROSS_BOARD_ACCOUNT,
+                     boards=[Board.DEALS, Board.WORK_ORDERS],
+                     filters=Filters(status=["Open"]))
+    result = run_analysis(plan, deals, work_orders, reports)
+
+    coverage = next(m for m in result.metrics if m.key == "account_link_coverage")
+    assert coverage.value is not None
+    assert coverage.value > 0
+    assert coverage.rows_considered == 5   # every work-order account, unfiltered
+
+
+def test_inapplicable_status_filter_is_reported(deals, work_orders, reports):
+    from app.models.schemas import Filters
+    plan = QueryPlan(intent=Intent.WORK_ORDER_STATUS, boards=[Board.WORK_ORDERS],
+                     filters=Filters(status=["Won"]))
+    result = run_analysis(plan, deals, work_orders, reports)
+    assert any("does not apply" in c for c in result.caveats)
+
+
+def test_account_coverage_describes_the_boards_not_the_query(deals, work_orders, reports):
+    """Coverage answers 'how well do these two boards link?'. Filtering it turns
+    it into a statement about the question instead, which is not what it claims."""
+    from app.models.schemas import Filters
+    unfiltered = run_analysis(
+        QueryPlan(intent=Intent.CROSS_BOARD_ACCOUNT,
+                  boards=[Board.DEALS, Board.WORK_ORDERS]),
+        deals, work_orders, reports)
+    filtered = run_analysis(
+        QueryPlan(intent=Intent.CROSS_BOARD_ACCOUNT,
+                  boards=[Board.DEALS, Board.WORK_ORDERS],
+                  filters=Filters(nature_of_work="Monthly Contract")),
+        deals, work_orders, reports)
+
+    a = next(m for m in unfiltered.metrics if m.key == "account_link_coverage")
+    b = next(m for m in filtered.metrics if m.key == "account_link_coverage")
+    assert a.value == b.value
+    assert a.rows_considered == b.rows_considered

@@ -88,14 +88,17 @@ class GroqProvider(LLMProvider):
         s = get_settings()
         self._key = s.groq_api_key
         self._model = s.groq_model
+        self._fallback_model = s.groq_fallback_model
         self._timeout = s.llm_timeout_seconds
 
     async def _chat(self, messages: list[dict], *, max_tokens: int,
-                    temperature: float, json_mode: bool) -> str:
+                    temperature: float, json_mode: bool,
+                    model: str | None = None) -> str:
         if not self._key:
             raise LLMError("GROQ_API_KEY is not set")
+        model = model or self._model
         payload: dict[str, Any] = {
-            "model": self._model,
+            "model": model,
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
@@ -115,7 +118,23 @@ class GroqProvider(LLMProvider):
         if r.status_code == 401:
             raise LLMError("Groq rejected the API key")
         if r.status_code == 429:
-            raise LLMError("Groq rate limit reached")
+            # Free-tier token budgets are per-model, so the smaller model is
+            # usually still available when the large one is exhausted.
+            if model != self._fallback_model:
+                logger.warning(
+                    "groq rate limited on %s, retrying on %s", model, self._fallback_model
+                )
+                return await self._chat(
+                    messages, max_tokens=max_tokens, temperature=temperature,
+                    json_mode=json_mode, model=self._fallback_model,
+                )
+            raise LLMError("Groq rate limit reached on all configured models")
+        if r.status_code == 404 and model != self._fallback_model:
+            logger.warning("groq model %s unavailable, falling back", model)
+            return await self._chat(
+                messages, max_tokens=max_tokens, temperature=temperature,
+                json_mode=json_mode, model=self._fallback_model,
+            )
         if r.status_code >= 400:
             raise LLMError(f"groq HTTP {r.status_code}: {r.text[:200]}")
         try:

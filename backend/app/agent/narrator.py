@@ -113,22 +113,23 @@ def build_context(result: AnalysisResult, plan: QueryPlan, question: str) -> str
                 "label": m.label,
                 "value": m.display,
                 "how_it_was_calculated": m.formula,
-                "means": m.definition,
                 "records_used": f"{m.rows_included} of {m.rows_considered}",
                 "excluded_because": m.exclusion_reasons,
                 "note": m.note,
             }
-            for m in result.metrics
+            for m in result.metrics[:8]
         ],
+        # Trimmed deliberately: the narrator writes three paragraphs, so it
+        # needs the shape of the data, not all of it. Sending every row of every
+        # breakdown burns the token budget without improving the prose -- and the
+        # full tables are rendered in the UI from the result object anyway.
         "breakdowns": [
             {
                 "title": b.title,
                 "note": b.note,
-                "rows": [
-                    {"name": r.label, **r.display} for r in b.rows[:12]
-                ],
+                "rows": [{"name": r.label, **r.display} for r in b.rows[:6]],
             }
-            for b in result.breakdowns if b.rows
+            for b in result.breakdowns[:2] if b.rows
         ],
         "data_quality": {
             "confidence": result.ledger.confidence,

@@ -94,12 +94,19 @@ def _match(series: pd.Series, needle: str) -> pd.Series:
 
 def apply_filters(
     df: pd.DataFrame, filters: Filters, *, board: str
-) -> tuple[pd.DataFrame, list[str]]:
-    """Apply plan filters. Returns the frame plus notes about filters that
-    matched nothing -- silently returning an empty result is a failure mode."""
+) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
+    """Apply plan filters.
+
+    Returns (filtered, filtered_without_status, notes).
+
+    The second frame exists because some metrics define their own status scope
+    and are meaningless on a status-filtered frame: computing a win rate over
+    only the Won deals yields 100%, which is arithmetically true and completely
+    useless. Those metrics use the status-free frame.
+    """
     notes: list[str] = []
     if df.empty:
-        return df, notes
+        return df, df, notes
 
     out = df
     if filters.sector:
@@ -127,16 +134,33 @@ def apply_filters(
     if filters.nature_of_work and not out.empty and "nature_of_work" in out.columns:
         out = out[_match(out["nature_of_work"], filters.nature_of_work)]
 
+    without_status = out
+
     if filters.status and not out.empty:
         wanted = {s.lower() for s in filters.status}
         col = "status_norm" if "status_norm" in out.columns else "exec_status_norm"
-        out = out[out[col].fillna("").str.lower().isin(wanted)]
+        vocabulary = {str(v).lower() for v in out[col].dropna().unique()}
+        # Deal statuses (Open/Won/Lost) and execution statuses (Completed/
+        # Ongoing/...) are different vocabularies. Applying one board's status
+        # filter to the other board silently empties it -- which previously made
+        # cross-board account coverage collapse to 0%. If the requested values
+        # aren't in this board's vocabulary, the filter isn't about this board.
+        if wanted & vocabulary:
+            out = out[out[col].fillna("").str.lower().isin(wanted)]
+        else:
+            notes.append(
+                f"The status filter ({', '.join(sorted(filters.status))}) does not "
+                f"apply to {board} records, so it was not used for them."
+            )
 
     if filters.stage and not out.empty and "stage_norm" in out.columns:
         wanted = {s.lower() for s in filters.stage}
         out = out[out["stage_norm"].fillna("").str.lower().isin(wanted)]
+        without_status = without_status[
+            without_status["stage_norm"].fillna("").str.lower().isin(wanted)
+        ]
 
-    return out, notes
+    return out, without_status, notes
 
 
 # ---------------------------------------------------------------------------
@@ -233,8 +257,8 @@ def run_analysis(
     today: date | None = None,
 ) -> AnalysisResult:
     today = today or date.today()
-    d, d_notes = apply_filters(deals, plan.filters, board="deal")
-    w, w_notes = apply_filters(work_orders, plan.filters, board="work order")
+    d, d_all_status, d_notes = apply_filters(deals, plan.filters, board="deal")
+    w, w_all_status, w_notes = apply_filters(work_orders, plan.filters, board="work order")
     notes = d_notes + w_notes
     window = resolve_date_range(plan.filters, today)
     intent = plan.intent
@@ -258,12 +282,14 @@ def run_analysis(
         return _result(plan, metrics, breakdowns, _scope_for(intent, d, w), reports, caveats=caveats)
 
     if intent == Intent.WON_REVENUE:
-        metrics = [dm.won_revenue(d), dm.win_rate(d), dm.lost_value(d)]
+        metrics = [dm.won_revenue(d), dm.win_rate(d_all_status),
+                   dm.lost_value(d_all_status)]
         breakdowns = [dm.pipeline_by_sector(d)]
         return _result(plan, metrics, breakdowns, _scope_for(intent, d, w), reports, caveats=caveats)
 
     if intent == Intent.WIN_RATE:
-        metrics = [dm.win_rate(d), dm.won_revenue(d), dm.lost_value(d)]
+        metrics = [dm.win_rate(d_all_status), dm.won_revenue(d_all_status),
+                   dm.lost_value(d_all_status)]
         return _result(plan, metrics, [], _scope_for(intent, d, w), reports, caveats=caveats)
 
     if intent == Intent.SECTOR_BREAKDOWN:
@@ -272,7 +298,7 @@ def run_analysis(
         return _result(plan, metrics, breakdowns, _scope_for(intent, d, w), reports, caveats=caveats)
 
     if intent == Intent.OWNER_PERFORMANCE:
-        metrics = [dm.total_open_pipeline(d), dm.win_rate(d)]
+        metrics = [dm.total_open_pipeline(d), dm.win_rate(d_all_status)]
         breakdowns = [dm.pipeline_by_owner(d)]
         return _result(plan, metrics, breakdowns, _scope_for(intent, d, w), reports, caveats=caveats)
 
@@ -323,7 +349,7 @@ def run_analysis(
     if intent == Intent.CROSS_BOARD_SECTOR:
         metrics = [
             dm.total_open_pipeline(d), wm.completion_rate(w),
-            wm.delayed_work_orders(w), cb.account_link_coverage(d, w),
+            wm.delayed_work_orders(w), cb.account_link_coverage(deals, work_orders),
         ]
         breakdowns = [
             cb.sector_opportunity_matrix(d, w),
@@ -334,7 +360,7 @@ def run_analysis(
 
     if intent == Intent.CROSS_BOARD_ACCOUNT:
         metrics = [
-            cb.account_link_coverage(d, w), dm.total_open_pipeline(d),
+            cb.account_link_coverage(deals, work_orders), dm.total_open_pipeline(d),
             wm.delayed_work_orders(w),
         ]
         breakdowns = [cb.accounts_at_risk(d, w), cb.owner_sales_vs_delivery(d, w)]
@@ -345,8 +371,9 @@ def run_analysis(
     # -- Executive --------------------------------------------------------
     if intent in (Intent.EXECUTIVE_SUMMARY, Intent.LEADERSHIP_UPDATE):
         metrics = [
-            dm.total_open_pipeline(d), dm.weighted_pipeline(d), dm.won_revenue(d),
-            dm.win_rate(d), wm.active_work_orders(w), wm.completion_rate(w),
+            dm.total_open_pipeline(d), dm.weighted_pipeline(d),
+            dm.won_revenue(d_all_status), dm.win_rate(d_all_status),
+            wm.active_work_orders(w), wm.completion_rate(w),
             wm.delayed_work_orders(w), dm.stale_deal_value(d),
             dm.pipeline_concentration(d), wm.unbilled_completed(w),
         ]
