@@ -36,28 +36,34 @@ def fiscal_quarter_bounds(today: date, offset: int = 0) -> tuple[date, date, str
     an explicit assumption rather than silently assumed to be calendar.
     """
     start_month = get_settings().fiscal_year_start_month
-    months_since = (today.month - start_month) % 12
-    q_index = months_since // 3 + offset
+    fy_start_year = today.year if today.month >= start_month else today.year - 1
+    months_since_fy_start = (today.year - fy_start_year) * 12 + (today.month - start_month)
+    current_q_global = months_since_fy_start // 3
+    target_q_global = current_q_global + offset
 
-    year = today.year
-    month = start_month + q_index * 3
-    while month > 12:
-        month -= 12
-        year += 1
-    while month < 1:
-        month += 12
-        year -= 1
+    target_fy_year = fy_start_year + (target_q_global // 4)
+    target_q_in_fy = target_q_global % 4
 
-    start = date(year, month, 1)
-    end_month, end_year = month + 3, year
-    if end_month > 12:
-        end_month -= 12
-        end_year += 1
-    end = date(end_year, end_month, 1) - timedelta(days=1)
+    start_m = start_month + target_q_in_fy * 3
+    start_y = target_fy_year
+    if start_m > 12:
+        start_m -= 12
+        start_y += 1
 
-    fy_year = year if month >= start_month else year - 1
-    label = f"Q{(q_index % 4) + 1} FY{str(fy_year + 1)[-2:]}" if start_month != 1 else \
-            f"Q{(q_index % 4) + 1} {year}"
+    start = date(start_y, start_m, 1)
+
+    end_m = start_m + 3
+    end_y = start_y
+    if end_m > 12:
+        end_m -= 12
+        end_y += 1
+    end = date(end_y, end_m, 1) - timedelta(days=1)
+
+    label = (
+        f"Q{target_q_in_fy + 1} FY{str(target_fy_year + 1)[-2:]}"
+        if start_month != 1
+        else f"Q{target_q_in_fy + 1} {start_y}"
+    )
     return start, end, label
 
 

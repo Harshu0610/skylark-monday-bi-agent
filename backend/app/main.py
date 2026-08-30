@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api import chat, health
+from .api import chat, dashboard, health
 from .config import get_settings
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
@@ -45,6 +45,7 @@ app.add_middleware(
 )
 
 app.include_router(chat.router, prefix="/api", tags=["chat"])
+app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
 app.include_router(health.router, prefix="/api", tags=["health"])
 
 

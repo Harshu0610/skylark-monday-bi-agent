@@ -1,92 +1,584 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Skylark Business Intelligence</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Skylark Business Intelligence — Enterprise Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
 
-<header class="topbar">
-  <div class="brand">
-    <div class="mark" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-        <path d="M12 3v18M3 12h18" stroke-linecap="round"/>
-        <circle cx="12" cy="12" r="3.2"/>
-        <circle cx="5" cy="5" r="1.6"/><circle cx="19" cy="5" r="1.6"/>
-        <circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/>
-      </svg>
+<div class="app-layout">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="brand-meta">
+        <span class="brand-title">Skylark BI</span>
+        <span class="brand-badge">Command Center</span>
+      </div>
+      <button class="mobile-close-btn" id="mobileCloseBtn" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
     </div>
-    <div class="brand-text">
-      <h1>Skylark Business Intelligence</h1>
-      <p>Conversational analysis over Monday.com</p>
+
+    <nav class="sidebar-nav" aria-label="Main Navigation">
+      <div class="nav-section-label">Core Platform</div>
+      <button class="nav-item active" data-view="overview">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>
+        </svg>
+        <span>Overview</span>
+      </button>
+
+      <button class="nav-item" data-view="chat">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+        </svg>
+        <span>Ask AI</span>
+        <span class="nav-tag">Real-time</span>
+      </button>
+
+      <button class="nav-item" data-view="insights">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 20V10M12 20V4M6 20v-6"/>
+        </svg>
+        <span>Insights</span>
+      </button>
+
+      <button class="nav-item" data-view="reports">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </svg>
+        <span>Reports</span>
+      </button>
+
+      <div class="nav-section-label">Governance & Sources</div>
+      <button class="nav-item" data-view="quality">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>
+        </svg>
+        <span>Data Quality</span>
+        <span class="nav-badge-pill" id="navQualityBadge">Audit</span>
+      </button>
+
+      <button class="nav-item" data-view="sources">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+        </svg>
+        <span>Data Sources</span>
+      </button>
+
+      <button class="nav-item" data-view="settings">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sync-status-box" id="sidebarSyncBox">
+        <div class="sync-header">
+          <span class="status-indicator live" id="sidebarSyncDot"></span>
+          <span class="sync-title" id="sidebarSyncTitle">Live Sync Active</span>
+        </div>
+        <div class="sync-details" id="sidebarSyncDetails">Connecting to boards…</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Viewport -->
+  <div class="main-viewport">
+    <!-- Top Header -->
+    <header class="app-topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-trigger" id="mobileMenuBtn" aria-label="Open menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="breadcrumbs">
+          <span class="crumb-root">Skylark</span>
+          <span class="crumb-sep">/</span>
+          <span class="crumb-current" id="viewTitle">Overview</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="board-chips-container" id="boardStatus">
+          <span class="chip chip-muted"><span class="dot"></span>checking boards…</span>
+        </div>
+        <button class="icon-action-btn" id="refreshDataBtn" title="Refresh Board Data" aria-label="Refresh Data">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="content-scrollable" id="mainContent">
+
+      <!-- ================= 1. OVERVIEW VIEW ================= -->
+      <section class="view-panel active" id="view-overview">
+        <!-- Hero AI Search -->
+        <div class="hero-command-card">
+          <div class="hero-header">
+            <div class="hero-badge">Natural Language Business Intelligence</div>
+            <h2>What would you like to understand?</h2>
+            <p>Ask anything about your sales pipeline, revenue, delivery execution, or operational risks.</p>
+          </div>
+          <form class="hero-query-form" id="heroQueryForm" autocomplete="off">
+            <div class="hero-input-wrapper">
+              <svg class="search-lens-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="heroQuestionInput" placeholder="Ask about pipeline value, delayed work orders, win rates, or data quality…" maxlength="2000" />
+              <button type="submit" class="hero-submit-btn" id="heroSubmitBtn">
+                <span>Analyze</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
+          </form>
+          <div class="hero-chips" id="heroSuggestedChips">
+            <!-- Dynamic prompt chips inserted by JS -->
+          </div>
+        </div>
+
+        <!-- Headline Executive Alert -->
+        <div id="executiveAlertContainer"></div>
+
+        <!-- Business Pulse KPI Section -->
+        <div class="section-container">
+          <div class="section-header-flex">
+            <div>
+              <h3 class="section-heading">Business Pulse</h3>
+              <p class="section-subtext">Deterministic metrics computed strictly from verified Monday.com records.</p>
+            </div>
+            <div class="provenance-legend">
+              <span class="legend-badge"><span class="info-dot">i</span> Click any card to inspect calculation formula & provenance</span>
+            </div>
+          </div>
+
+          <div class="kpi-grid" id="kpiGrid">
+            <!-- Primary Pulse KPI Cards (Open Pipeline, Won Revenue, Work Orders at Risk, Delivery Completion) -->
+          </div>
+
+          <!-- Secondary Metrics Strip -->
+          <div class="secondary-metrics-bar" id="secondaryMetricsBar">
+            <!-- Secondary chips (Weighted pipeline, Open deals, Win rate, Delivered unbilled, etc.) -->
+          </div>
+        </div>
+
+        <!-- Operational Risks & Data Quality Row -->
+        <div class="dashboard-dual-grid">
+          <!-- Operational Risks Card -->
+          <div class="dash-card">
+            <div class="dash-card-head">
+              <div class="card-head-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-warning"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>Operational Risks</span>
+              </div>
+              <button class="card-action-link" data-action="query" data-q="How many work orders are delayed?">View All Delayed &rarr;</button>
+            </div>
+            <div class="dash-card-body" id="operationalRisksBody">
+              <div class="loading-shimmer-box">Loading risk diagnostics…</div>
+            </div>
+          </div>
+
+          <!-- Data Quality Health Card -->
+          <div class="dash-card">
+            <div class="dash-card-head">
+              <div class="card-head-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-quality"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                <span>Data Quality Health</span>
+              </div>
+              <button class="card-action-link" data-view="quality">Audit Ledger &rarr;</button>
+            </div>
+            <div class="dash-card-body" id="overviewQualityBody">
+              <div class="loading-shimmer-box">Evaluating data completeness…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Categorized Suggested Questions -->
+        <div class="section-container">
+          <h3 class="section-heading">Explore Capabilities</h3>
+          <p class="section-subtext">Verified analytical models available across sales, operations, and leadership.</p>
+          <div class="categorized-questions-grid" id="categorizedQuestionsGrid">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Recent Analysis History -->
+        <div class="section-container" id="recentAnalysisSection">
+          <div class="section-header-flex">
+            <div>
+              <h3 class="section-heading">Recent Analyses</h3>
+              <p class="section-subtext">Reopen previous queries and verified decision summaries.</p>
+            </div>
+            <button class="ghost-btn" id="clearHistoryBtn">Clear History</button>
+          </div>
+          <div class="recent-analyses-grid" id="recentAnalysesGrid">
+            <div class="empty-history-hint">No queries executed yet in this session. Ask a question above to start.</div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= 2. ASK AI CONVERSATION VIEW ================= -->
+      <section class="view-panel" id="view-chat">
+        <div class="chat-workspace">
+          <!-- Starter State (Shown when no conversation is active) -->
+          <div class="chat-starter-hero" id="chatStarterHero">
+            <div class="chat-starter-header">
+              <div class="hero-badge">AI Conversational Intelligence</div>
+              <h2>What would you like to analyze?</h2>
+              <p>Ask founder-level questions across your Deals and Work Orders boards. Numbers are calculated deterministically with full provenance.</p>
+            </div>
+            <div class="chat-starter-grid" id="chatStarterGrid">
+              <!-- 8 Default Questions rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Active Conversation Thread -->
+          <div class="chat-thread" id="chatThread" style="display:none;">
+            <!-- Messages rendered dynamically -->
+          </div>
+
+          <!-- Sticky Chat Composer -->
+          <div class="chat-composer-sticky">
+            <div class="chat-quick-chips" id="chatQuickChips">
+              <!-- Quick question pills -->
+            </div>
+            <form class="chat-composer-form" id="chatComposerForm" autocomplete="off">
+              <div class="composer-inner">
+                <input type="text" id="chatQuestionInput" placeholder="Ask a business question (e.g., 'What is our pipeline by sector?', 'Which accounts are at risk?')" maxlength="2000" />
+                <button type="submit" class="composer-send-btn" id="chatSendButton" aria-label="Send">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+              <div class="composer-footer-note">
+                <span>Deterministic calculations verified. Untrusted prose audited against ground truth.</span>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= 3. INSIGHTS VIEW ================= -->
+      <section class="view-panel" id="view-insights">
+        <div class="insights-container">
+          <div class="insights-hero-header">
+            <div>
+              <h2>Cross-Board Business Insights</h2>
+              <p>Cross-referencing sales opportunity demand with real delivery execution health.</p>
+            </div>
+            <div class="coverage-badge" id="insightsCoverageBadge">
+              Calculating cross-board coverage…
+            </div>
+          </div>
+
+          <!-- Sector Matrix Card -->
+          <div class="insight-big-card">
+            <div class="insight-card-header">
+              <div>
+                <h3>Sector Opportunity vs. Execution Matrix</h3>
+                <p>Demand (pipeline value) plotted against delivery execution (completion rate).</p>
+              </div>
+            </div>
+            <div id="sectorMatrixContainer" class="chart-viewport">
+              <div class="loading-shimmer-box">Rendering opportunity matrix…</div>
+            </div>
+          </div>
+
+          <div class="dashboard-dual-grid">
+            <!-- Accounts at Risk -->
+            <div class="dash-card">
+              <div class="dash-card-head">
+                <div class="card-head-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-warning"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span>Accounts With Pipeline & Delivery Risk</span>
+                </div>
+              </div>
+              <div class="dash-card-body" id="accountsRiskBody">
+                <div class="loading-shimmer-box">Loading accounts at risk…</div>
+              </div>
+            </div>
+
+            <!-- Owner Cross-Board Performance -->
+            <div class="dash-card">
+              <div class="dash-card-head">
+                <div class="card-head-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-accent"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>Sales vs. Delivery by Owner</span>
+                </div>
+              </div>
+              <div class="dash-card-body" id="ownerPerformanceBody">
+                <div class="loading-shimmer-box">Loading owner performance…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= 4. REPORTS VIEW ================= -->
+      <section class="view-panel" id="view-reports">
+        <div class="reports-container">
+          <div class="reports-header-flex">
+            <div>
+              <h2 id="reportTitleHeader">Leadership Update Briefing</h2>
+              <p>Executive-ready synthesis with ranked risks and verified talking points.</p>
+            </div>
+            <div class="report-controls">
+              <button class="action-btn" id="copyTalkingPointsBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy Talking Points</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Talking Points Section -->
+          <div class="briefing-box">
+            <div class="briefing-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-accent"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <span>Executive Talking Points</span>
+            </div>
+            <ul class="talking-points-list" id="reportTalkingPointsList">
+              <li class="shimmer-text">Loading executive points…</li>
+            </ul>
+          </div>
+
+          <!-- Ranked Material Risks -->
+          <div class="section-container">
+            <h3 class="section-heading">Ranked Operational & Commercial Risks</h3>
+            <p class="section-subtext">Risks ranked strictly by numerical materiality.</p>
+            <div class="ranked-risks-container" id="reportRankedRisks">
+              <div class="loading-shimmer-box">Evaluating risks…</div>
+            </div>
+          </div>
+
+          <!-- Quarterly Movement & Funnel -->
+          <div class="dashboard-dual-grid">
+            <div class="dash-card">
+              <div class="dash-card-head">
+                <div class="card-head-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <span>Quarterly Pipeline Creation Trend</span>
+                </div>
+              </div>
+              <div class="dash-card-body" id="quarterlyTrendBody">
+                <div class="loading-shimmer-box">Loading quarterly movements…</div>
+              </div>
+            </div>
+
+            <div class="dash-card">
+              <div class="dash-card-head">
+                <div class="card-head-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                  <span>Pipeline Funnel by Stage</span>
+                </div>
+              </div>
+              <div class="dash-card-body" id="funnelStageBody">
+                <div class="loading-shimmer-box">Loading funnel distribution…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= 5. DATA QUALITY VIEW ================= -->
+      <section class="view-panel" id="view-quality">
+        <div class="quality-view-container">
+          <div class="quality-hero-header">
+            <div>
+              <h2>Data Quality & Governance Audit</h2>
+              <p>Transparent accounting of missing values, unmapped records, and parsing ambiguities.</p>
+            </div>
+            <div class="health-score-card">
+              <div class="score-number" id="qualityScoreNum">--%</div>
+              <div class="score-label">Overall Usability Score</div>
+            </div>
+          </div>
+
+          <div class="dashboard-dual-grid">
+            <!-- Deals Board Quality Audit -->
+            <div class="dash-card">
+              <div class="dash-card-head">
+                <div class="card-head-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span>Deals Board Completeness</span>
+                </div>
+              </div>
+              <div class="dash-card-body" id="qualityDealsBody">
+                <div class="loading-shimmer-box">Analyzing Deals board…</div>
+              </div>
+            </div>
+
+            <!-- Work Orders Board Quality Audit -->
+            <div class="dash-card">
+              <div class="dash-card-head">
+                <div class="card-head-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                  <span>Work Orders Board Completeness</span>
+                </div>
+              </div>
+              <div class="dash-card-body" id="qualityWorkOrdersBody">
+                <div class="loading-shimmer-box">Analyzing Work Orders board…</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quality Ledger Exclusions -->
+          <div class="section-container">
+            <h3 class="section-heading">Exclusion & Normalization Ledger</h3>
+            <p class="section-subtext">Every record alteration or exclusion reason is logged explicitly.</p>
+            <div class="dash-card">
+              <div class="dash-card-body" id="qualityLedgerTableBody">
+                <div class="loading-shimmer-box">Loading normalization ledger…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= 6. DATA SOURCES VIEW ================= -->
+      <section class="view-panel" id="view-sources">
+        <div class="sources-view-container">
+          <div class="sources-header">
+            <h2>Data Sources & Monday.com Sync</h2>
+            <p>Inspection of connected Monday.com boards, item counts, cache freshness, and schema resolution.</p>
+          </div>
+
+          <div class="sources-grid" id="sourcesBoardGrid">
+            <!-- Deals & Work Orders boards cards rendered by JS -->
+          </div>
+
+          <div class="section-container">
+            <h3 class="section-heading">Cross-Board Schema Alignment</h3>
+            <p class="section-subtext">How Monday.com column IDs are mapped onto canonical data structures.</p>
+            <div class="dash-card">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Canonical Field</th>
+                      <th>Deals Board Column</th>
+                      <th>Work Orders Column</th>
+                      <th>Join Capability</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>deal_name</code></td>
+                      <td>Deal Name</td>
+                      <td>Deal name masked</td>
+                      <td><span class="badge-pill badge-green">Exact Match (~90% Coverage)</span></td>
+                    </tr>
+                    <tr>
+                      <td><code>sector</code></td>
+                      <td>Sector/service</td>
+                      <td>Sector</td>
+                      <td><span class="badge-pill badge-green">Exact Match (6 Sectors)</span></td>
+                    </tr>
+                    <tr>
+                      <td><code>owner_code</code></td>
+                      <td>Owner code</td>
+                      <td>BD/KAM Personnel code</td>
+                      <td><span class="badge-pill badge-green">Exact Match (6 Codes)</span></td>
+                    </tr>
+                    <tr>
+                      <td><code>customer_code</code></td>
+                      <td>Client Code (<code>COMPANY###</code>)</td>
+                      <td>Customer Name Code (<code>WOCOMPANY_###</code>)</td>
+                      <td><span class="badge-pill badge-red">Disjoint Scheme (0% Overlap)</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= 7. SETTINGS VIEW ================= -->
+      <section class="view-panel" id="view-settings">
+        <div class="settings-container">
+          <div class="settings-header">
+            <h2>Platform Settings & Diagnostics</h2>
+            <p>Configuration of business periods, LLM narration keys, and data sources.</p>
+          </div>
+
+          <div class="settings-card-grid">
+            <div class="dash-card">
+              <div class="dash-card-head">
+                <div class="card-head-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                  <span>Fiscal Calendar</span>
+                </div>
+              </div>
+              <div class="dash-card-body">
+                <div class="setting-item">
+                  <div class="setting-label">Fiscal Year Start Month</div>
+                  <div class="setting-desc">Indian corporate reporting standard begins in April (Month 4).</div>
+                  <div class="setting-value-badge">April (Month 4)</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="dash-card">
+              <div class="dash-card-head">
+                <div class="card-head-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                  <span>AI Architecture</span>
+                </div>
+              </div>
+              <div class="dash-card-body">
+                <div class="setting-item">
+                  <div class="setting-label">Deterministic Computation Engine</div>
+                  <div class="setting-desc">All calculations and aggregations run purely in Python without LLM.</div>
+                  <div class="setting-value-badge badge-green">Deterministic (100% Verified)</div>
+                </div>
+                <div class="setting-item">
+                  <div class="setting-label">Narration & Interpretation Model</div>
+                  <div class="setting-desc" id="settingsLlmStatus">Checking LLM status…</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ================= PROVENANCE MODAL ("WHY THIS NUMBER?") ================= -->
+<div class="modal-overlay" id="provenanceModal">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalMetricTitle">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <span class="modal-eyebrow">Data Provenance & Calculation</span>
+        <h3 id="modalMetricTitle">Metric Name</h3>
+      </div>
+      <button class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modalMetricBody">
+      <!-- Injected by JS -->
     </div>
   </div>
-  <div class="board-status" id="boardStatus">
-    <span class="chip chip-muted">checking boards…</span>
-  </div>
-</header>
-
-<main class="conversation" id="conversation">
-  <section class="welcome" id="welcome">
-    <h2>Ask a question about the business.</h2>
-    <p class="welcome-sub">
-      Every figure is computed deterministically from your Monday.com boards, and every
-      answer shows which records it used and which it could not.
-    </p>
-    <div class="suggestions" id="suggestions">
-      <button class="suggestion" data-q="What's our total pipeline?">
-        <span class="s-title">What's our total pipeline?</span>
-        <span class="s-sub">Open pipeline with full data-quality accounting</span>
-      </button>
-      <button class="suggestion" data-q="Which sectors have the strongest pipeline but weak execution?">
-        <span class="s-title">Strong pipeline, weak execution?</span>
-        <span class="s-sub">Cross-board sector opportunity matrix</span>
-      </button>
-      <button class="suggestion" data-q="How many work orders are delayed?">
-        <span class="s-title">How many work orders are delayed?</span>
-        <span class="s-sub">Delivery risk across the project book</span>
-      </button>
-      <button class="suggestion" data-q="What's our won revenue?">
-        <span class="s-title">What's our won revenue?</span>
-        <span class="s-sub">Reported alongside what the data can't tell us</span>
-      </button>
-      <button class="suggestion" data-q="What data quality problems do we have?">
-        <span class="s-title">What data quality problems do we have?</span>
-        <span class="s-sub">A first-class answer, not an error page</span>
-      </button>
-      <button class="suggestion" data-q="Prepare this week's leadership update.">
-        <span class="s-title">Prepare this week's leadership update.</span>
-        <span class="s-sub">Briefing with ranked risks and talking points</span>
-      </button>
-    </div>
-  </section>
-</main>
-
-<footer class="composer">
-  <form id="composerForm" autocomplete="off">
-    <input
-      id="questionInput"
-      type="text"
-      placeholder="Ask about pipeline, delivery, risk, or data quality…"
-      maxlength="2000"
-      aria-label="Ask a business question"
-    />
-    <button type="submit" id="sendButton" aria-label="Send question">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M13 6l6 6-6 6"/>
-      </svg>
-    </button>
-  </form>
-  <p class="composer-note">
-    Read-only. This tool queries Monday.com and never modifies it.
-  </p>
-</footer>
+</div>
 
 <script src="/static/app.js"></script>
 </body>
