@@ -218,7 +218,8 @@ def open_deal_count(df: pd.DataFrame) -> MetricResult:
         "open_deal_count", "Open deals", len(scope), "count",
         formula="count of deals where Deal Status = Open",
         definition="Number of live opportunities.",
-        rows_considered=len(df), rows_included=len(scope),
+        # Classifying a deal as not-open is not an exclusion; the count is exact.
+        rows_considered=len(df), rows_included=len(df),
     )
 
 
@@ -241,7 +242,7 @@ def stale_deals(df: pd.DataFrame) -> MetricResult:
             "Deals still marked Open whose expected close date has already "
             "passed -- the forecast is out of date or the deal has slipped."
         ),
-        rows_considered=len(scope), rows_included=len(scope) - undated,
+        rows_considered=len(scope), rows_included=len(scope) - undated,  # undated genuinely cannot be judged
         exclusion_reasons={"no expected close date recorded": undated},
         note=(
             f"{undated} open deals have no expected close date and could not be "
@@ -288,6 +289,7 @@ def pipeline_concentration(df: pd.DataFrame, top_n: int = 3) -> MetricResult:
             "concentration means the forecast depends on a few outcomes."
         ),
         rows_considered=len(scope), rows_included=int(len(values)),
+        exclusion_reasons={"deal value is blank": len(scope) - len(values)},
         note=f"Largest {top_n} deals total {format_inr(top)}.",
     )
 

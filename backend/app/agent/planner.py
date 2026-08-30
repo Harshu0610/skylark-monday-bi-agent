@@ -99,6 +99,8 @@ def _default_boards(intent: Intent) -> list[Board]:
     if intent in (Intent.WORK_ORDER_STATUS, Intent.DELIVERY_PERFORMANCE,
                   Intent.DELAYED_WORK, Intent.BILLING_RISK):
         return [Board.WORK_ORDERS]
+    if intent == Intent.PERIOD_COMPARISON:
+        return [Board.DEALS]
     if intent in (Intent.CROSS_BOARD_SECTOR, Intent.CROSS_BOARD_ACCOUNT,
                   Intent.EXECUTIVE_SUMMARY, Intent.LEADERSHIP_UPDATE,
                   Intent.DATA_QUALITY):

@@ -83,6 +83,11 @@ def quarter_over_quarter(
             definition="Movement in new pipeline created between the two periods.",
             rows_considered=current.rows_considered + previous.rows_considered,
             rows_included=current.rows_included + previous.rows_included,
+            exclusion_reasons={
+                "deal value is blank, so the deal moves the count but not the value":
+                    (current.rows_considered - current.rows_included)
+                    + (previous.rows_considered - previous.rows_included)
+            },
             note=(
                 "Based only on deals with recorded values, so it reflects a "
                 "direction of travel rather than an exact figure."
@@ -287,3 +292,121 @@ def period_labels(today: date, fiscal_start_month: int) -> tuple[str, str]:
     _, _, this_label = fiscal_quarter_bounds(today, 0)
     _, _, last_label = fiscal_quarter_bounds(today, -1)
     return this_label, last_label
+
+
+def deals_closed_in_range(
+    df: pd.DataFrame, start: date, end: date, label: str
+) -> MetricResult:
+    """Deals won in a window.
+
+    Uses actual close date where present and falls back to expected close date,
+    because actual close dates are 92% null. The fallback is flagged rather than
+    hidden -- a period figure built partly on expected dates is a weaker claim
+    than one built on actuals, and the reader should know which they have.
+    """
+    if df.empty:
+        return build_metric("won_closed", f"Deals won ({label})", None, "count",
+                            rows_considered=0, rows_included=0)
+
+    won = df[df["is_won"] == True]  # noqa: E712
+    if won.empty:
+        return build_metric(
+            "won_closed", f"Deals won ({label})", 0, "count",
+            rows_considered=len(df), rows_included=0,
+            note="No won deals on record.",
+        )
+
+    def _closed_on(row):
+        return row["actual_close_date"] or row["tentative_close_date"]
+
+    dated = won[won.apply(lambda r: _closed_on(r) is not None, axis=1)]
+    in_range = dated[dated.apply(lambda r: start <= _closed_on(r) <= end, axis=1)]
+    inferred = int(in_range["actual_close_date"].isna().sum()) if not in_range.empty else 0
+    undated = len(won) - len(dated)
+
+    return build_metric(
+        "won_closed", f"Deals won ({label})", len(in_range), "count",
+        formula=f"count of won deals whose close date falls in {label}",
+        definition=(
+            "Deals marked Won that closed in the period. Actual close date is "
+            "used where recorded; expected close date otherwise."
+        ),
+        rows_considered=len(won), rows_included=len(dated),
+        exclusion_reasons={"no close date of any kind recorded": undated} if undated else {},
+        note=(
+            f"{inferred} of {len(in_range)} used the expected close date because "
+            "no actual close date was recorded." if inferred else None
+        ),
+    )
+
+
+def pipeline_created_by_quarter(
+    df: pd.DataFrame, today: date, quarters: int = 4
+) -> Breakdown:
+    """New pipeline created per quarter -- the trend behind the headline delta."""
+    from .registry import fiscal_quarter_bounds
+
+    if df.empty:
+        return Breakdown(key="created_by_quarter", title="New pipeline by quarter",
+                         dimension="quarter", columns=["value", "deals"], rows=[],
+                         chart="bar", note="No deals available.")
+
+    rows: list[BreakdownRow] = []
+    for offset in range(-(quarters - 1), 1):
+        start, end, label = fiscal_quarter_bounds(today, offset)
+        metric = pipeline_created_in_range(df, start, end, label)
+        rows.append(BreakdownRow(
+            key=label, label=label,
+            values={"value": metric.value, "deals": metric.rows_considered},
+            display={
+                "value": format_inr(metric.value),
+                "deals": f"{metric.rows_considered}",
+            },
+        ))
+    return Breakdown(
+        key="created_by_quarter", title=f"New pipeline created, last {quarters} quarters",
+        dimension="quarter", columns=["value", "deals"], rows=rows, chart="bar",
+        note=(
+            "By deal creation date. Deals with no recorded value contribute to the "
+            "deal count but not the value."
+        ),
+    )
+
+
+def latest_populated_quarters(
+    df: pd.DataFrame, today: date, lookback: int = 8
+) -> tuple[tuple[date, date, str], tuple[date, date, str], bool]:
+    """The two most recent quarters that actually contain deals.
+
+    "This quarter vs last quarter" is the question people ask, but it is useless
+    when the data stops six months ago -- it answers "nothing vs nothing". So we
+    walk back to the two most recent quarters with records and report which ones
+    we used. Answering a slightly different question and saying so beats
+    answering the literal one with two blanks.
+    """
+    from .registry import fiscal_quarter_bounds
+
+    populated: list[tuple[date, date, str]] = []
+    for offset in range(0, -lookback, -1):
+        start, end, label = fiscal_quarter_bounds(today, offset)
+        if df.empty:
+            break
+        dated = df[df["created_date"].notna()]
+        if not dated.empty and dated["created_date"].apply(
+            lambda d: start <= d <= end
+        ).any():
+            populated.append((start, end, label))
+        if len(populated) == 2:
+            break
+
+    current, _, _ = fiscal_quarter_bounds(today, 0)
+    if len(populated) < 2:
+        # Not enough history to compare; hand back the literal quarters and let
+        # the metrics report themselves as unavailable.
+        return (
+            fiscal_quarter_bounds(today, 0),
+            fiscal_quarter_bounds(today, -1),
+            False,
+        )
+    shifted = populated[0][0] != current
+    return populated[0], populated[1], shifted

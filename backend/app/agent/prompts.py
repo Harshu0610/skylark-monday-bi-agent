@@ -58,6 +58,8 @@ CHOOSING AN INTENT (pick exactly one):
   billing_risk         - unbilled work, billing gaps, invoicing
   cross_board_sector   - pipeline vs execution BY SECTOR, "strong sales weak delivery"
   cross_board_account  - accounts/customers with both open deals and delivery issues
+  period_comparison    - "what changed this quarter", quarter-over-quarter, trend,
+                         movement vs the prior period
   executive_summary    - "how's the business", CEO overview, what should I worry about
   data_quality         - questions about missing or inconsistent data
   leadership_update    - prepare a leadership or board update

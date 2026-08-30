@@ -184,6 +184,7 @@ FIELDS_FOR_INTENT: dict[Intent, list[str]] = {
     Intent.CROSS_BOARD_SECTOR: ["sector_norm", "amount_value"],
     Intent.CROSS_BOARD_ACCOUNT: ["deal_name_norm", "amount_value"],
     Intent.EXECUTIVE_SUMMARY: ["amount_value", "status_norm", "sector_norm"],
+    Intent.PERIOD_COMPARISON: ["amount_value", "created_date", "status_norm"],
     Intent.DATA_QUALITY: [],
     Intent.LEADERSHIP_UPDATE: ["amount_value", "status_norm", "sector_norm"],
 }
@@ -214,6 +215,8 @@ def _scope_for(intent: Intent, deals: pd.DataFrame, work_orders: pd.DataFrame) -
         return deals[deals["is_open"] == True] if not deals.empty else deals  # noqa: E712
     if intent == Intent.WON_REVENUE:
         return deals[deals["is_won"] == True] if not deals.empty else deals  # noqa: E712
+    if intent == Intent.PERIOD_COMPARISON:
+        return deals
     if intent == Intent.WIN_RATE:
         return deals[deals["is_closed"] == True] if not deals.empty else deals  # noqa: E712
     if intent in WORK_ORDER_INTENTS:
@@ -369,6 +372,37 @@ def run_analysis(
         return _result(plan, metrics, breakdowns, _scope_for(intent, d, w), reports,
                        caveats=caveats)
 
+    # -- Period movement --------------------------------------------------
+    if intent == Intent.PERIOD_COMPARISON:
+        (this_start, this_end, this_label), (last_start, last_end, last_label), shifted = (
+            ex.latest_populated_quarters(d, today)
+        )
+        if shifted:
+            _, _, actual_label = fiscal_quarter_bounds(today, 0)
+            caveats.append(
+                f"No deals were created in {actual_label}, so this compares the two "
+                f"most recent quarters that contain records: {this_label} against "
+                f"{last_label}."
+            )
+        created, prior, change = ex.quarter_over_quarter(
+            d, this_start, this_end, this_label, last_start, last_end, last_label
+        )
+        won_now = ex.deals_closed_in_range(d_all_status, this_start, this_end, this_label)
+        won_prior = ex.deals_closed_in_range(d_all_status, last_start, last_end, last_label)
+        won_prior.key = "won_closed_prior"
+        metrics = [
+            created, prior, change, won_now, won_prior,
+            dm.total_open_pipeline(d), dm.open_deal_count(d),
+        ]
+        breakdowns = [ex.pipeline_created_by_quarter(d, today), dm.pipeline_by_sector(d)]
+        caveats.append(
+            f"Movement is measured by deal creation date, which is the only date "
+            f"field complete enough to support a period comparison. "
+            f"Comparing {this_label} against {last_label}."
+        )
+        return _result(plan, metrics, breakdowns, _scope_for(intent, d, w), reports,
+                       caveats=caveats)
+
     # -- Leadership briefing ----------------------------------------------
     if intent == Intent.LEADERSHIP_UPDATE:
         this_start, this_end, this_label = fiscal_quarter_bounds(today, 0)
@@ -455,6 +489,7 @@ def data_quality_report(
             formula=f"{missing_amt} of {len(deals)} deals",
             definition="Deals where the value field is blank in Monday.com.",
             rows_considered=len(deals), rows_included=len(deals) - missing_amt,
+            exclusion_reasons={"deal value is blank": missing_amt},
         ))
         if not won.empty:
             metrics.append(build_metric(
@@ -466,6 +501,7 @@ def data_quality_report(
                     "materially understated because most won deals carry no value."
                 ),
                 rows_considered=len(won), rows_included=len(won) - won_missing,
+                exclusion_reasons={"deal value is blank": won_missing},
             ))
         missing_close = int(deals["tentative_close_date"].isna().sum())
         metrics.append(build_metric(
@@ -474,6 +510,7 @@ def data_quality_report(
             formula=f"{missing_close} of {len(deals)} deals",
             definition="Deals that cannot be placed in a forecast period.",
             rows_considered=len(deals), rows_included=len(deals) - missing_close,
+            exclusion_reasons={"no expected close date recorded": missing_close},
         ))
 
     if not work_orders.empty:
@@ -484,6 +521,7 @@ def data_quality_report(
             formula=f"{no_end} of {len(work_orders)} work orders",
             definition="Work orders whose delay status cannot be determined.",
             rows_considered=len(work_orders), rows_included=len(work_orders) - no_end,
+            exclusion_reasons={"no planned end date recorded": no_end},
         ))
         no_billed = int(work_orders["billed_value"].isna().sum())
         metrics.append(build_metric(
@@ -492,6 +530,7 @@ def data_quality_report(
             formula=f"{no_billed} of {len(work_orders)} work orders",
             definition="Work orders where billing progress is not recorded.",
             rows_considered=len(work_orders), rows_included=len(work_orders) - no_billed,
+            exclusion_reasons={"billed value is blank": no_billed},
         ))
 
     rows: list = []

@@ -33,6 +33,7 @@ class Intent(str, Enum):
     CROSS_BOARD_SECTOR = "cross_board_sector"
     CROSS_BOARD_ACCOUNT = "cross_board_account"
     EXECUTIVE_SUMMARY = "executive_summary"
+    PERIOD_COMPARISON = "period_comparison"
     DATA_QUALITY = "data_quality"
     LEADERSHIP_UPDATE = "leadership_update"
 

@@ -18,6 +18,10 @@ INTENT_PATTERNS: list[tuple[Intent, list[str]]] = [
                            r"data problem", r"incomplete"]),
     (Intent.LEADERSHIP_UPDATE, [r"leadership update", r"board update", r"weekly update",
                                 r"prepare .*(update|briefing)", r"talking points"]),
+    (Intent.PERIOD_COMPARISON, [r"what changed", r"quarter[- ]over[- ]quarter", r"qoq",
+                                r"compared to last (quarter|month)", r"vs last quarter",
+                                r"trend", r"how has .*(changed|moved)", r"movement",
+                                r"growth (over|since)", r"this quarter vs"]),
     (Intent.CROSS_BOARD_ACCOUNT, [r"customers? (who|with|that)", r"accounts? (who|with|that)",
                                   r"both .*(deal|pipeline).*(work|project|delivery)",
                                   r"(sales|pipeline) potential and .*(risk|operational)"]),
@@ -90,9 +94,11 @@ def keyword_plan(question: str) -> QueryPlan:
     elif "this year" in q:
         filters.date_range = DateRange(preset=DatePreset.THIS_YEAR)
 
-    if intent in (Intent.CROSS_BOARD_SECTOR, Intent.CROSS_BOARD_ACCOUNT,
-                  Intent.EXECUTIVE_SUMMARY, Intent.LEADERSHIP_UPDATE,
-                  Intent.DATA_QUALITY):
+    if intent == Intent.PERIOD_COMPARISON:
+        boards = [Board.DEALS]
+    elif intent in (Intent.CROSS_BOARD_SECTOR, Intent.CROSS_BOARD_ACCOUNT,
+                    Intent.EXECUTIVE_SUMMARY, Intent.LEADERSHIP_UPDATE,
+                    Intent.DATA_QUALITY):
         boards = [Board.DEALS, Board.WORK_ORDERS]
     elif intent in (Intent.WORK_ORDER_STATUS, Intent.DELIVERY_PERFORMANCE,
                     Intent.DELAYED_WORK, Intent.BILLING_RISK):

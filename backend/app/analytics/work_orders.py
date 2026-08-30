@@ -28,7 +28,9 @@ def active_work_orders(df: pd.DataFrame) -> MetricResult:
         "active_work_orders", "Active work orders", len(active), "count",
         formula="count where execution status is Not Started, Ongoing or Partially Complete",
         definition="Work that is committed but not yet finished.",
-        rows_considered=len(df), rows_included=len(active),
+        # Every row was examined and classified -- nothing was excluded. A count
+        # of a subset is the answer, not a sample of it.
+        rows_considered=len(df), rows_included=len(df),
     )
 
 
@@ -41,7 +43,7 @@ def completed_work_orders(df: pd.DataFrame) -> MetricResult:
             "Includes recurring contracts marked 'Executed until current month', "
             "which are delivering on schedule."
         ),
-        rows_considered=len(df), rows_included=len(done),
+        rows_considered=len(df), rows_included=len(df),
     )
 
 
