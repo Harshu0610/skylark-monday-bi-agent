@@ -80,7 +80,17 @@ A first-class answer, not an error page. 52% of deals missing value, 21.5% missi
 
 ---
 
-## 7. "Prepare this week's leadership update."
+## 7. "What changed this quarter?"
+
+**New pipeline created fell 93.8% — ₹35.40 Cr in Q3 FY26 down to ₹2.20 Cr in Q4 FY26.**
+
+Note the caveat: *"No deals were created in Q2 FY27, so this compares the two most recent quarters that contain records."*
+
+**Say:** "The data stops in Q4 FY26, so a literal 'this quarter vs last quarter' would compare nothing against nothing. It walks back to the most recent quarters that have records and tells you it did. Movement is measured by creation date, because that's the only date field complete enough to support a comparison — close dates are 92% empty."
+
+---
+
+## 8. "Prepare this week's leadership update."
 
 The optional requirement, interpreted as a briefing built for decisions.
 
