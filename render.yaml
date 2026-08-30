@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: skylark-bi
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: MONDAY_API_TOKEN
+        sync: false          # set in the Render dashboard, never in the repo
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LLM_PROVIDER
+        value: groq
+      - key: MONDAY_DEALS_BOARD_NAME
+        value: Deals
+      - key: MONDAY_WORK_ORDERS_BOARD_NAME
+        value: Work Orders
+      - key: FISCAL_YEAR_START_MONTH
+        value: "4"
+      - key: LOG_LEVEL
+        value: INFO

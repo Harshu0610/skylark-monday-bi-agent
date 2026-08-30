@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Skylark Business Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M12 3v18M3 12h18" stroke-linecap="round"/>
+        <circle cx="12" cy="12" r="3.2"/>
+        <circle cx="5" cy="5" r="1.6"/><circle cx="19" cy="5" r="1.6"/>
+        <circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <h1>Skylark Business Intelligence</h1>
+      <p>Conversational analysis over Monday.com</p>
+    </div>
+  </div>
+  <div class="board-status" id="boardStatus">
+    <span class="chip chip-muted">checking boards…</span>
+  </div>
+</header>
+
+<main class="conversation" id="conversation">
+  <section class="welcome" id="welcome">
+    <h2>Ask a question about the business.</h2>
+    <p class="welcome-sub">
+      Every figure is computed deterministically from your Monday.com boards, and every
+      answer shows which records it used and which it could not.
+    </p>
+    <div class="suggestions" id="suggestions">
+      <button class="suggestion" data-q="What's our total pipeline?">
+        <span class="s-title">What's our total pipeline?</span>
+        <span class="s-sub">Open pipeline with full data-quality accounting</span>
+      </button>
+      <button class="suggestion" data-q="Which sectors have the strongest pipeline but weak execution?">
+        <span class="s-title">Strong pipeline, weak execution?</span>
+        <span class="s-sub">Cross-board sector opportunity matrix</span>
+      </button>
+      <button class="suggestion" data-q="How many work orders are delayed?">
+        <span class="s-title">How many work orders are delayed?</span>
+        <span class="s-sub">Delivery risk across the project book</span>
+      </button>
+      <button class="suggestion" data-q="What's our won revenue?">
+        <span class="s-title">What's our won revenue?</span>
+        <span class="s-sub">Reported alongside what the data can't tell us</span>
+      </button>
+      <button class="suggestion" data-q="What data quality problems do we have?">
+        <span class="s-title">What data quality problems do we have?</span>
+        <span class="s-sub">A first-class answer, not an error page</span>
+      </button>
+      <button class="suggestion" data-q="Give me a CEO-level summary of the business.">
+        <span class="s-title">Give me a CEO-level summary.</span>
+        <span class="s-sub">Pipeline, delivery, risk and concentration</span>
+      </button>
+    </div>
+  </section>
+</main>
+
+<footer class="composer">
+  <form id="composerForm" autocomplete="off">
+    <input
+      id="questionInput"
+      type="text"
+      placeholder="Ask about pipeline, delivery, risk, or data quality…"
+      maxlength="2000"
+      aria-label="Ask a business question"
+    />
+    <button type="submit" id="sendButton" aria-label="Send question">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M13 6l6 6-6 6"/>
+      </svg>
+    </button>
+  </form>
+  <p class="composer-note">
+    Read-only. This tool queries Monday.com and never modifies it.
+  </p>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
