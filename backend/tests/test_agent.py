@@ -301,3 +301,53 @@ def test_account_coverage_describes_the_boards_not_the_query(deals, work_orders,
     b = next(m for m in filtered.metrics if m.key == "account_link_coverage")
     assert a.value == b.value
     assert a.rows_considered == b.rows_considered
+
+
+# ---------------------------------------------------------------------------
+# Leadership briefing
+# ---------------------------------------------------------------------------
+
+def test_leadership_briefing_produces_talking_points(deals, work_orders, reports):
+    plan = QueryPlan(intent=Intent.LEADERSHIP_UPDATE,
+                     boards=[Board.DEALS, Board.WORK_ORDERS])
+    result = run_analysis(plan, deals, work_orders, reports)
+
+    assert result.headline and "Leadership briefing" in result.headline
+    assert result.facts, "briefing must produce talking points"
+    tp = next(b for b in result.breakdowns if b.key == "talking_points")
+    assert tp.rows
+
+
+def test_every_briefing_risk_carries_a_figure(deals, work_orders, reports):
+    """A risk without a number attached is an opinion, and this briefing is
+    not for opinions."""
+    import re
+    plan = QueryPlan(intent=Intent.LEADERSHIP_UPDATE,
+                     boards=[Board.DEALS, Board.WORK_ORDERS])
+    result = run_analysis(plan, deals, work_orders, reports)
+    for risk in result.caveats:
+        if "does not apply" in risk or "not possible" in risk:
+            continue  # explanatory caveats, not risk statements
+        assert re.search(r"\d", risk), f"risk has no figure: {risk}"
+
+
+def test_briefing_talking_points_invent_no_numbers(deals, work_orders, reports):
+    plan = QueryPlan(intent=Intent.LEADERSHIP_UPDATE,
+                     boards=[Board.DEALS, Board.WORK_ORDERS])
+    result = run_analysis(plan, deals, work_orders, reports)
+    allowed = narrator._canonical_numbers(result)
+    for point in result.facts:
+        assert not narrator.find_invented_numbers(point, allowed), point
+
+
+def test_quarter_comparison_refuses_when_a_period_has_no_data(empty_deals):
+    """Comparing against an empty period must yield None, not a fake delta."""
+    from datetime import date
+    from app.analytics.executive import quarter_over_quarter
+    _, _, change = quarter_over_quarter(
+        empty_deals,
+        date(2026, 7, 1), date(2026, 9, 30), "Q2",
+        date(2026, 4, 1), date(2026, 6, 30), "Q1",
+    )
+    assert change.value is None
+    assert "Not comparable" in (change.note or "")

@@ -169,8 +169,150 @@ const QUADRANT_CLASS = {
   "Deprioritise": "quad-depri",
 };
 
+
+/* The cross-board showpiece: pipeline (x) against delivery health (y).
+ * Hand-rolled SVG -- a charting library would be 40kb for one chart, and this
+ * needs to be readable in both themes without a runtime dependency. */
+function renderScatter(bd) {
+  const pts = bd.rows.filter(
+    (r) => r.values.pipeline != null && r.values.completion_rate != null
+  );
+  const unplotted = bd.rows.filter(
+    (r) => r.values.pipeline == null || r.values.completion_rate == null
+  );
+  if (pts.length < 2) return null;
+
+  const W = 560, H = 340, PAD = { t: 22, r: 22, b: 46, l: 58 };
+  const iw = W - PAD.l - PAD.r, ih = H - PAD.t - PAD.b;
+
+  const xs = pts.map((p) => p.values.pipeline);
+  const xMax = Math.max(...xs) * 1.12 || 1;
+  const sizes = pts.map((p) => p.values.work_orders || 0);
+  const sMax = Math.max(...sizes, 1);
+
+  // Quadrant lines sit at the median of each axis, matching how the backend
+  // assigns quadrant labels.
+  const med = (a) => {
+    const v = [...a].sort((m, n) => m - n);
+    const i = Math.floor(v.length / 2);
+    return v.length % 2 ? v[i] : (v[i - 1] + v[i]) / 2;
+  };
+  const xMed = med(xs);
+  const yMed = med(pts.map((p) => p.values.completion_rate));
+
+  const X = (v) => PAD.l + (v / xMax) * iw;
+  const Y = (v) => PAD.t + ih - (v / 100) * ih;
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("class", "scatter");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", bd.title);
+
+  const mk = (tag, attrs, text) => {
+    const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (text !== undefined) n.textContent = text;
+    svg.appendChild(n);
+    return n;
+  };
+
+  // quadrant shading: the "fix delivery" corner is the one that matters
+  mk("rect", { x: X(xMed), y: PAD.t, width: Math.max(X(xMax) - X(xMed), 0),
+               height: Y(yMed) - PAD.t, class: "q-good" });
+  mk("rect", { x: X(xMed), y: Y(yMed), width: Math.max(X(xMax) - X(xMed), 0),
+               height: PAD.t + ih - Y(yMed), class: "q-bad" });
+
+  mk("line", { x1: PAD.l, y1: Y(yMed), x2: PAD.l + iw, y2: Y(yMed), class: "q-line" });
+  mk("line", { x1: X(xMed), y1: PAD.t, x2: X(xMed), y2: PAD.t + ih, class: "q-line" });
+
+  mk("line", { x1: PAD.l, y1: PAD.t, x2: PAD.l, y2: PAD.t + ih, class: "axis" });
+  mk("line", { x1: PAD.l, y1: PAD.t + ih, x2: PAD.l + iw, y2: PAD.t + ih, class: "axis" });
+
+  [0, 50, 100].forEach((v) => {
+    mk("text", { x: PAD.l - 8, y: Y(v) + 4, class: "tick", "text-anchor": "end" }, v + "%");
+  });
+
+  mk("text", { x: PAD.l + iw, y: PAD.t + ih + 34, class: "axis-label",
+               "text-anchor": "end" }, "Open pipeline →");
+  mk("text", { x: -(PAD.t + ih / 2), y: 15, class: "axis-label",
+               "text-anchor": "middle", transform: "rotate(-90)" }, "Delivery completion →");
+
+  mk("text", { x: X(xMed) + 8, y: PAD.t + 14, class: "q-label q-label-good" }, "SCALE");
+  mk("text", { x: X(xMed) + 8, y: PAD.t + ih - 8, class: "q-label q-label-bad" }, "FIX DELIVERY");
+
+  pts.forEach((p) => {
+    const cx = X(p.values.pipeline), cy = Y(p.values.completion_rate);
+    const r = 5 + ((p.values.work_orders || 0) / sMax) * 13;
+    const bad = p.display.quadrant === "Fix delivery";
+    const dot = mk("circle", { cx, cy, r, class: bad ? "dot dot-bad" : "dot" });
+    const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    title.textContent =
+      `${p.label}: ${p.display.pipeline} pipeline, ` +
+      `${p.display.completion_rate} completion, ` +
+      `${p.display.work_orders} work orders (${p.display.delayed} delayed)`;
+    dot.appendChild(title);
+    mk("text", { x: cx, y: cy - r - 6, class: "dot-label", "text-anchor": "middle" }, p.label);
+  });
+
+  const wrap = el("div", "chart-wrap");
+  wrap.appendChild(svg);
+  if (unplotted.length) {
+    const note = el(
+      "p", "table-note",
+      `Not plotted (no delivery history): ${unplotted.map((u) => u.label).join(", ")}.`
+    );
+    wrap.appendChild(note);
+  }
+  return wrap;
+}
+
+/* Talking points are the deliverable of a leadership briefing, so they get a
+ * copy button rather than a table row. */
+function renderTalkingPoints(bd) {
+  const section = el("div", "section");
+  const head = el("div", "tp-head");
+  head.appendChild(el("h3", "section-title", bd.title));
+  const btn = el("button", "copy-btn", "Copy");
+  btn.addEventListener("click", async () => {
+    const text = bd.rows.map((r) => "• " + r.label).join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = "Copied";
+    } catch {
+      btn.textContent = "Press Ctrl+C";
+    }
+    setTimeout(() => (btn.textContent = "Copy"), 1800);
+  });
+  head.appendChild(btn);
+  section.appendChild(head);
+
+  const list = el("ul", "talking-points");
+  bd.rows.forEach((r) => {
+    const li = el("li");
+    textInto(li, r.label);
+    list.appendChild(li);
+  });
+  section.appendChild(list);
+  if (bd.note) section.appendChild(el("p", "table-note", bd.note));
+  return section;
+}
+
 function renderBreakdown(bd) {
   if (!bd.rows || !bd.rows.length) return null;
+  if (bd.key === "talking_points") return renderTalkingPoints(bd);
+
+  if (bd.chart === "scatter") {
+    const chart = renderScatter(bd);
+    if (chart) {
+      const section = el("div", "section");
+      section.appendChild(el("h3", "section-title", bd.title));
+      section.appendChild(chart);
+      if (bd.note) section.appendChild(el("p", "table-note", bd.note));
+      return section;
+    }
+  }
+
   const section = el("div", "section");
   section.appendChild(el("h3", "section-title", bd.title));
 

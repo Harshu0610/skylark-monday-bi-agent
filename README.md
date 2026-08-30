@@ -5,6 +5,10 @@ A conversational business intelligence agent over Monday.com. Ask a founder-leve
 > Most BI chatbots will confidently give you a wrong number.
 > This one tells you which records it couldn't use, and why.
 
+**Live demo: https://skylark-monday-bi-agent-tply.onrender.com**
+
+*(Free-tier hosting sleeps after ~15 minutes idle — the first request may take 30-50s to wake. Subsequent ones are 2-5s.)*
+
 ---
 
 ## What it does
@@ -18,20 +22,35 @@ A conversational business intelligence agent over Monday.com. Ask a founder-leve
 
 ## Architecture
 
+```mermaid
+flowchart TD
+    Q["Founder question"] --> P["<b>LLM Planner</b><br/>sees the question ONLY<br/>never board data"]
+    P --> PLAN["QueryPlan<br/><i>enum-constrained</i>"]
+    PLAN --> M["Monday GraphQL<br/>paginated · retrying · cached<br/><b>read-only</b>"]
+    M --> D[("Deals board")]
+    M --> W[("Work Orders board")]
+    D --> N["<b>Normalization</b><br/>raw preserved<br/>every change counted"]
+    W --> N
+    N --> L["Quality ledger"]
+    N --> C["Canonical DataFrames"]
+    C --> A["<b>Analytics engine</b><br/>deterministic pandas<br/><i>no LLM below this line</i>"]
+    A --> R["MetricResult[]<br/>with provenance"]
+    L --> R
+    R --> NAR["<b>LLM Narrator</b><br/>aggregates only<br/>fenced as untrusted"]
+    NAR --> V{"Every numeral<br/>verified against<br/>computed results"}
+    V -->|mismatch| T["Template fallback"]
+    V -->|ok| OUT["Response"]
+    T --> OUT
+    R -.->|"numbers travel here, bypassing the model"| OUT
+
+    style A fill:#1a4d3a,color:#fff
+    style P fill:#3a2d5a,color:#fff
+    style NAR fill:#3a2d5a,color:#fff
+    style L fill:#5a3a1a,color:#fff
+    style V fill:#5a1a1a,color:#fff
 ```
-Question
-  → LLM Planner ────────── sees the question ONLY, never board data
-      ↓ QueryPlan (enum-constrained: intent, boards, filters)
-  → Monday GraphQL ─────── paginated, retrying, cached, read-only
-      ↓
-  → Normalization ──────── raw preserved, every transformation counted
-      ↓ canonical DataFrames + quality ledger
-  → Analytics engine ───── deterministic pandas; no LLM below this line
-      ↓ MetricResult[] with full provenance
-  → LLM Narrator ───────── aggregates only, fenced as untrusted data
-      ↓
-  → Response: prose + verbatim metrics + ledger
-```
+
+The two purple boxes are the only non-deterministic components. Everything else is plain Python that produces the same answer every time.
 
 **The load-bearing decision:** metric values travel to the UI straight from the analytics engine, bypassing the model. A hallucinating narrator can only produce worse *wording* — never a wrong *number*. And after generation, every numeral in the prose is verified against the computed results; a mismatch discards the narration and renders from a template instead.
 
@@ -43,7 +62,7 @@ Question
 
 **Cross-board** — sector opportunity vs execution matrix, accounts with both open pipeline and delivery risk, deals won vs work delivered, owner sales vs delivery
 
-**Executive** — CEO summary, leadership update, data-quality report
+**Executive** — CEO summary, **leadership briefing** (snapshot, quarter-on-quarter movement, ranked risks with figures attached, and copy-paste-ready talking points), data-quality report
 
 **Reliability** — per-query confidence scoring, query-plan transparency, stated assumptions, keyword-routing fallback if the LLM is down, template narration if it fails mid-answer, stale-cache serving if Monday is unreachable
 
@@ -56,7 +75,7 @@ Question
 | Agent | Hand-rolled, no framework | One structured call — a framework would be pure overhead |
 | Monday | GraphQL API v2, direct | Full control over pagination, retry and read-only enforcement |
 | Frontend | Vanilla JS + CSS, served by FastAPI | One deployment, no CORS, no build step |
-| Tests | pytest — **171 tests** | Concentrated on normalization and metrics, where bugs live |
+| Tests | pytest — **193 tests** | Concentrated on normalization and metrics, where bugs live |
 
 ---
 
@@ -143,7 +162,7 @@ docker compose up --build
 ## Testing
 
 ```bash
-cd backend && python -m pytest -q        # 171 tests
+cd backend && python -m pytest -q        # 193 tests
 ```
 
 Coverage concentrates where correctness actually lives:
@@ -162,6 +181,7 @@ Coverage concentrates where correctness actually lives:
 7. *What's our won revenue?* — answers, then flags that 61% of won deals have no value recorded
 8. *What data quality problems do we have?*
 9. *Give me a CEO-level summary of the business.*
+10. *Prepare this week's leadership update.* — briefing mode, with a copy button
 
 ## Security
 

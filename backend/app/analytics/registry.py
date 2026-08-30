@@ -21,6 +21,7 @@ from ..models.schemas import (
     QueryPlan,
 )
 from . import cross_board as cb
+from . import executive as ex
 from . import deals as dm
 from . import work_orders as wm
 
@@ -368,8 +369,38 @@ def run_analysis(
         return _result(plan, metrics, breakdowns, _scope_for(intent, d, w), reports,
                        caveats=caveats)
 
+    # -- Leadership briefing ----------------------------------------------
+    if intent == Intent.LEADERSHIP_UPDATE:
+        this_start, this_end, this_label = fiscal_quarter_bounds(today, 0)
+        last_start, last_end, last_label = fiscal_quarter_bounds(today, -1)
+        created, prior, change = ex.quarter_over_quarter(
+            d, this_start, this_end, this_label, last_start, last_end, last_label
+        )
+        metrics = [
+            dm.total_open_pipeline(d), dm.weighted_pipeline(d),
+            created, prior, change,
+            dm.won_revenue(d_all_status), dm.win_rate(d_all_status),
+            wm.active_work_orders(w), wm.completion_rate(w),
+            wm.delayed_work_orders(w), wm.overdue_backlog_value(w),
+            wm.unbilled_completed(w), dm.stale_deal_value(d),
+            dm.pipeline_concentration(d), dm.open_deal_count(d),
+        ]
+        breakdowns = [
+            cb.sector_opportunity_matrix(d, w),
+            cb.accounts_at_risk(d, w),
+            dm.pipeline_by_sector(d),
+        ]
+        risks, points, briefing = ex.build_briefing(metrics, breakdowns, this_label)
+        breakdowns.insert(0, briefing)
+        result = _result(plan, metrics, breakdowns, _scope_for(intent, d, w), reports,
+                         caveats=caveats)
+        result.headline = f"Leadership briefing — {this_label}"
+        result.facts = points
+        result.caveats = risks + result.caveats
+        return result
+
     # -- Executive --------------------------------------------------------
-    if intent in (Intent.EXECUTIVE_SUMMARY, Intent.LEADERSHIP_UPDATE):
+    if intent == Intent.EXECUTIVE_SUMMARY:
         metrics = [
             dm.total_open_pipeline(d), dm.weighted_pipeline(d),
             dm.won_revenue(d_all_status), dm.win_rate(d_all_status),

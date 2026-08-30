@@ -438,3 +438,71 @@ details[open] .ledger-summary::before { transform: rotate(90deg); }
   .bar-row { grid-template-columns: 96px 1fr auto; }
   .user-msg span { max-width: 90%; }
 }
+
+/* --------------------------------------------------- sector matrix chart */
+
+.chart-wrap { width: 100%; overflow-x: auto; }
+.scatter { width: 100%; min-width: 460px; height: auto; display: block; }
+
+.scatter .q-good { fill: var(--green); opacity: .05; }
+.scatter .q-bad  { fill: var(--red);   opacity: .06; }
+.scatter .q-line { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 4; }
+.scatter .axis   { stroke: var(--border); stroke-width: 1; }
+
+.scatter .tick,
+.scatter .axis-label {
+  fill: var(--text-3); font-size: 10.5px; font-family: var(--sans);
+}
+.scatter .axis-label { font-size: 10px; letter-spacing: .04em; }
+
+.scatter .q-label {
+  font-size: 9.5px; font-weight: 700; letter-spacing: .09em;
+  font-family: var(--sans);
+}
+.scatter .q-label-good { fill: var(--green); opacity: .75; }
+.scatter .q-label-bad  { fill: var(--red);   opacity: .75; }
+
+.scatter .dot {
+  fill: var(--accent); fill-opacity: .55;
+  stroke: var(--accent); stroke-width: 1.4;
+}
+.scatter .dot-bad {
+  fill: var(--red); fill-opacity: .55; stroke: var(--red);
+}
+.scatter .dot-label {
+  fill: var(--text-2); font-size: 10.5px; font-weight: 550;
+  font-family: var(--sans);
+}
+
+/* ------------------------------------------------------- talking points */
+
+.tp-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 8px;
+}
+.tp-head .section-title { margin: 0; }
+
+.copy-btn {
+  padding: 4px 11px; border-radius: 6px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-2); font-size: 11.5px; font-family: inherit;
+  cursor: pointer; transition: border-color .14s, color .14s, background .14s;
+  white-space: nowrap;
+}
+.copy-btn:hover {
+  border-color: var(--accent-border); color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.talking-points {
+  margin: 0; padding: 14px 16px 14px 32px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+}
+.talking-points li {
+  font-size: 14px; line-height: 1.62; color: var(--text);
+  margin-bottom: 9px;
+}
+.talking-points li:last-child { margin-bottom: 0; }
+.talking-points li::marker { color: var(--accent); }
