@@ -230,3 +230,26 @@ def test_every_metric_can_account_for_its_rows(board_data, question, _expected):
 def test_confidence_is_always_scored(board_data, question, _expected):
     _, result, _ = answer(board_data, question)
     assert result.ledger.confidence in ("high", "medium", "low")
+
+
+# ---------------------------------------------------------------------------
+# Clarification discipline
+# ---------------------------------------------------------------------------
+
+VAGUE_BUT_ANSWERABLE = [
+    ("How is the pipeline?", Intent.PIPELINE),
+    ("What changed this quarter?", Intent.PERIOD_COMPARISON),
+    ("What should I be worried about?", Intent.DEAL_RISK),
+    ("How's the business?", Intent.EXECUTIVE_SUMMARY),
+    ("Where are our biggest growth opportunities?", Intent.EXECUTIVE_SUMMARY),
+]
+
+
+@pytest.mark.parametrize("question,expected", VAGUE_BUT_ANSWERABLE)
+def test_vague_questions_get_a_default_not_a_question(board_data, question, expected):
+    """A wrong default the user can correct in one click beats a question that
+    stalls them. These are all vague, and all have a sensible default."""
+    plan, result, _ = answer(board_data, question)
+    assert plan.intent == expected
+    assert result.unsupported is None
+    assert result.metrics or result.breakdowns

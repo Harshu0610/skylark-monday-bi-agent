@@ -72,14 +72,24 @@ this_month, this_year, next_90_days, all_time. If the user says "this quarter"
 use this_quarter. If they give no time frame, leave date_range null rather than
 guessing a window.
 
-CLARIFICATION POLICY - this matters:
+CLARIFICATION POLICY - this matters, and the bar is HIGH:
   Prefer answering with a sensible default over asking a question. Only set
   needs_clarification to true when the plausible readings would produce
-  genuinely different numbers AND you cannot pick a reasonable default.
-  "How is the pipeline?" -> just answer with total open pipeline. Do NOT clarify.
-  "How did we do?" -> sales and delivery are different answers, so clarify.
-  Whenever you assume something, put it in the assumptions array in plain
-  English so the user can see and correct it.
+  genuinely different numbers AND no reasonable default exists.
+
+  Worked examples:
+    "How is the pipeline?"        -> pipeline. Do NOT clarify.
+    "What changed this quarter?"  -> period_comparison. Do NOT clarify; the
+                                     default is movement in new pipeline, and
+                                     the answer states that assumption.
+    "What should I be worried about?" -> deal_risk. Do NOT clarify.
+    "How's the business?"         -> executive_summary. Do NOT clarify.
+    "How did we do?"              -> genuinely ambiguous between sales and
+                                     delivery with no sensible default. Clarify.
+
+  A wrong default the user can see and correct in one click beats a question
+  that stalls them. Whenever you assume something, put it in the assumptions
+  array in plain English so the user can see and correct it.
 
 Never invent metric names, sectors, owners or statuses that are not listed above.
 """
