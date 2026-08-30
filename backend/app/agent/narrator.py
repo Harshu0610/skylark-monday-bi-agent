@@ -218,12 +218,15 @@ async def narrate(
             "numbers instead.",
         )
 
-    # Caveats from the analytics layer are authoritative and always survive.
-    for caveat in result.caveats:
-        if caveat not in narrative["risks"]:
-            narrative["risks"].append(caveat)
-    for warning in result.ledger.warnings:
-        if warning not in narrative["risks"]:
-            narrative["risks"].append(warning)
+    # Caveats from the analytics layer are computed statements; the model's are
+    # paraphrases of them. When the two disagree the computed one is right, so
+    # it leads. (Observed in production: the engine said every open deal was
+    # PAST its close date; the model rendered that as close dates being
+    # MISSING. Numbers were protected by the verifier, but the meaning drifted.)
+    authoritative = list(result.caveats) + [
+        w for w in result.ledger.warnings if w not in result.caveats
+    ]
+    generated = [r for r in narrative["risks"] if r not in authoritative]
+    narrative["risks"] = authoritative + generated
 
     return narrative, False, None

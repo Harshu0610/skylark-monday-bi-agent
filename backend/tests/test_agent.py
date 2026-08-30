@@ -351,3 +351,27 @@ def test_quarter_comparison_refuses_when_a_period_has_no_data(empty_deals):
     )
     assert change.value is None
     assert "Not comparable" in (change.note or "")
+
+
+def test_computed_caveats_outrank_generated_ones(deals, work_orders, reports):
+    """A generated paraphrase must never displace the computed statement it
+    paraphrases. Observed in production: the engine said open deals were PAST
+    their close date; the model rendered it as close dates being MISSING."""
+    import asyncio
+    plan = QueryPlan(intent=Intent.DEAL_RISK, boards=[Board.DEALS])
+    result = run_analysis(plan, deals, work_orders, reports)
+    result.caveats = ["Every open deal is past its expected close date."]
+
+    class FakeProvider:
+        async def complete_json(self, system, user, *, schema_hint, max_tokens=1200):
+            return {"answer": "Pipeline reviewed.", "insight": None,
+                    "risks": ["Close dates are missing for all open deals."],
+                    "follow_ups": []}
+        async def complete_text(self, *a, **k):
+            return ""
+
+    narrative, degraded, _ = asyncio.run(
+        narrator.narrate(result, plan, "what's at risk?", FakeProvider())
+    )
+    assert not degraded
+    assert narrative["risks"][0] == "Every open deal is past its expected close date."
